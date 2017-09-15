@@ -10,22 +10,19 @@
 #include "NodoNario.h"
 
 using namespace std;
-
 //Escribe "pais" en un achivo con nombre "nombre_archivo" en la posicion "posicion"
 //Nota: Se deben poder agregar varios registros en un solo archivo
-int tamanoarchivo = 25;
 void escribir(string nombre_archivo, Pais*pais, int posicion)
 {
-    ofstream out (nombre_archivo.c_str(),ios::in);
+    ofstream out(nombre_archivo.c_str(),ios::in);
     if(!out.is_open())
     {
         out.open(nombre_archivo.c_str());
     }
-    out.seekp(posicion*tamanoarchivo);
-    out.write(pais->nombre.c_str(),20);
+    out.seekp(posicion*25);
+    out.write((char*)pais->nombre.c_str(),20);
     out.write((char*)&pais->habitantes,4);
     out.write((char*)&pais->hablan_espanol,1);
-
     out.close();
 }
 
@@ -33,50 +30,36 @@ void escribir(string nombre_archivo, Pais*pais, int posicion)
 //Nota: Se deben poder leer varios registros de un archivo
 Pais* leer(string nombre_archivo, int posicion)
 {
-    char nombre[20];
-    int habitantes;
-    bool hablanesp;
-
     ifstream in(nombre_archivo.c_str());
-    in.seekg(posicion*tamanoarchivo);
-
+    in.seekg(posicion*25);
+    int habitantes;
+    char nombre[20];
+    bool hablan_espanol;
     in.read(nombre,20);
     in.read((char*)&habitantes,4);
-    in.read((char*)&hablanesp,1);
-
-    in.close();
-
-    Pais *pais = new Pais(nombre, habitantes,hablanesp);
+    in.read((char*)&hablan_espanol,1);
+    Pais *pais = new Pais(nombre,habitantes,hablan_espanol);
     return pais;
-
 }
 
 //Devuelve suma de habitantes de paises que hablan espanol en el archivo con nombre "nombre_archivo"
 //Nota: Los registros se deben de haber guardado previamente con la funcion escribir()
 int contarHispanohablantes(string nombre_archivo)
 {
-    bool hablanesp;
-    int hispanos;
-    int total = 0 ;
-
     ifstream in(nombre_archivo.c_str());
     in.seekg(0,ios::end);
-    int tam=in.tellg();
-    in.seekg(0);
-    while (in.tellg()<tam)
+    int cantidad_registros = in.tellg()/25;
+    int contador_hispanos= 0;
+    for(int i=0;i<cantidad_registros;i++)
     {
-        in.seekg(20,ios::cur);
-        in.read((char*)&hispanos,4);
-        in.read((char*)&hablanesp,1);
-        if(hablanesp == true)
+        Pais *pais=leer(nombre_archivo,i);
+        if(pais->hablan_espanol)
         {
-            total+=hispanos;
+            contador_hispanos+=pais->habitantes;
         }
+
     }
-
-    in.close();
-    return total;
-
+    return contador_hispanos;
 }
 
 //Devuelve un set que contenga los numeros fibonacci.
@@ -102,40 +85,47 @@ set<int> getNumerosFibonacci(int cantidad)
         }
     }
 
-    return respuesta;;
+    return respuesta;
 }
 
 //Devuelve la cantidad de letras mayusculas presentes en "a" y "b"
 int contarMayusculas(stack<char> a,queue<char> b)
 {
-    int total = 0;
-    while(!a.empty())
-    {
-        if((int)a.top() >= 65 && (int)a.top() <= 90)
-        {
-            total++;
-            a.pop();
+    int ma=0;
+    int mb=0;
+    while(!a.empty()){
+
+        if(a.top()=='A'||a.top()=='B'||a.top()=='C'||a.top()=='D'||a.top()=='F'||a.top()=='G'||a.top()=='H'||a.top()=='I'||
+           a.top()=='J'||a.top()=='K'||a.top()=='L'||a.top()=='M'||a.top()=='N'||a.top()=='O'||a.top()=='P'||a.top()=='Q'
+           ||a.top()=='R'||a.top()=='S'||a.top()=='T'||a.top()=='U'||a.top()=='V'||a.top()=='W'||a.top()=='X'||a.top()=='Y'
+           ||a.top()=='Z'){
+
+            ma++;
+
         }
-        else
-            a.pop();
+        a.pop();
     }
 
-    while(!b.empty())
-    {
-        if((int)b.front() >= 65 && (int)b.front()<= 90)
-        {
-            total++;
-            b.pop();
+    while(!b.empty()){
+
+        if(b.front()=='A'||b.front()=='B'||b.front()=='C'||b.front()=='D'||b.front()=='F'||b.front()=='G'||b.front()=='H'||b.front()=='I'||
+           b.front()=='J'||b.front()=='K'||b.front()=='L'||b.front()=='M'||b.front()=='N'||b.front()=='O'||b.front()=='P'||b.front()=='Q'
+           ||b.front()=='R'||b.front()=='S'||b.front()=='T'||b.front()=='U'||b.front()=='V'||b.front()=='W'||b.front()=='X'||b.front()=='Y'
+           ||b.front()=='Z'){
+
+            mb++;
+
         }
-        else
-            b.pop();
+        b.pop();
     }
-    return total;
+
+
+    return ma+mb;
 }
 
 //Devuelve la cantidad de llaves repetidas en "mi_multimapa"
 //Nota: No devuelve la cantidad de repeticines
-int contarLLavesRepetidas(multimap<string,string> mi_multimapa)
+int contarLLavesRepetidas(multimap<string,string>mi_multimapa)
 {
     map<string,string> mi_mapa;
     for(multimap<string,string>::iterator i= mi_multimapa.begin(); i!= mi_multimapa.end(); i++)
@@ -150,12 +140,37 @@ int contarLLavesRepetidas(multimap<string,string> mi_multimapa)
 //Devuelve true si y solo si "buscado" existe en el arbol nario "raiz"
 bool existe(NodoNario* raiz,int buscado)
 {
-    return false;
+    bool retorna=false;
+    if(raiz==NULL){
+        return false;
+    }
+    if(raiz->valor==buscado)
+        return true;
+    int tamano_final=raiz->hijos.size();
+
+    for(int j=0;j<tamano_final;j++)
+    {
+        if(existe(raiz->hijos[j],buscado)){
+            retorna=true;
+            break;
+        }
+
+    }
+
+    return retorna;
 }
 
 //Busca el valor "buscado" en el arbol "raiz" y lo reemplaza con "reemplazo"
 void buscarYReemplazar(NodoNario* raiz, int buscado, int reemplazo)
 {
+    if(raiz->valor == buscado)
+        raiz->valor = reemplazo;
+    else
+    {
+        for(int i = 0; i < raiz->hijos.size(); i++){
+            buscarYReemplazar(raiz->hijos[i],buscado,reemplazo);
+        }
+    }
 }
 
 //Devuelve un vector que contenga la siguiente secuencia binaria:
@@ -181,7 +196,8 @@ vector<char> obtenerSecuencia()
     return respuesta;
 }
 
-int main () {
+int main ()
+{
     //Funcion evaluadora
     evaluar();
     return 0;
